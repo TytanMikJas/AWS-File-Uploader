@@ -1,9 +1,12 @@
 package com.example.server.file;
 
+import com.example.server.file.dto.FileRequest;
+import com.example.server.file.dto.FileResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,15 +18,13 @@ import java.util.List;
 public class FileController {
     private final FileService fileService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> saveFile(
-         @RequestPart("file") MultipartFile file,
-         @RequestParam("fileName") String fileName
+            @Valid @ModelAttribute FileRequest request
     ) {
         try {
-            return fileService.save(file, fileName);
+            return fileService.save(request);
         } catch (IOException e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
@@ -55,7 +56,6 @@ public class FileController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         } catch (IOException e) {
-            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }

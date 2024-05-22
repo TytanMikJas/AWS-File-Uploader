@@ -1,13 +1,16 @@
 package com.example.server.file;
 
+import com.example.server.file.dto.FileMapper;
+import com.example.server.file.dto.FileRequest;
+import com.example.server.file.dto.FileResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,8 +20,14 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileMapper fileMapper;
 
-    public ResponseEntity<?> save(MultipartFile file, String fileName) throws IOException {
-        String url = Constants.BUCKET_URL.getValue() + fileName;
+    @Value("${aws.bucket.url}")
+    private String BUCKET_URL;
+
+    public ResponseEntity<?> save(FileRequest request) throws IOException {
+        String fileName = request.fileName();
+        MultipartFile file = request.file();
+
+        String url = BUCKET_URL + fileName;
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -31,18 +40,13 @@ public class FileService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                File newFile = File.builder()
-                        .fileUrl(url)
-                        .fileName(fileName)
-                        .build();
-
+                File newFile = fileMapper.toFile(fileName, url);
                 fileRepository.save(newFile);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.status(response.getStatusCode()).build();
             }
         } catch (IOException e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }

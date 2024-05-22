@@ -17,3 +17,7 @@ spring:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+aws:
+  bucket:
+    url: https://8vz46pxelk.execute-api.us-east-1.amazonaws.com/dev/tytan-file-bucket/
