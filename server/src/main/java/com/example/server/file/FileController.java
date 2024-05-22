@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -19,34 +20,50 @@ public class FileController {
     private final FileService fileService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> saveFile(
+    public ResponseEntity<String> saveFile(
             @Valid @ModelAttribute FileRequest request
     ) {
         try {
             return fileService.save(request);
         } catch (IOException e) {
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.internalServerError().body("Failed to save file due to IO error.");
         }
     }
 
     @GetMapping
-    public List<FileResponse> findAllFiles() {
-        return fileService.findAll();
+    public ResponseEntity<List<FileResponse>> findAllFiles() {
+        try {
+            return ResponseEntity.ok(fileService.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(null);
+        }
     }
 
     @DeleteMapping("/{id}")
-    public void deleteFile(
-            @PathVariable("id") Integer fileId
-    ) {
-        fileService.delete(fileId);
+    public ResponseEntity<?> deleteFile(@PathVariable("id") Integer fileId) {
+        try {
+            fileService.delete(fileId);
+            return ResponseEntity.noContent().build();
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PatchMapping("/{id}/{fileName}")
-    public void updateFile(
+    public ResponseEntity<?> updateFile(
             @PathVariable("id") Integer fileId,
             @PathVariable("fileName") String fileName
     ) {
-        fileService.update(fileId, fileName);
+        try {
+            fileService.update(fileId, fileName);
+            return ResponseEntity.ok().build();
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping("/{id}")
